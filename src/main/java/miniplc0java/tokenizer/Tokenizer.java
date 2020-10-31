@@ -48,14 +48,14 @@ public class Tokenizer {
         // 解析成功则返回无符号整数类型的token，否则返回编译错误
         //
         // Token 的 Value 应填写数字的值
-        Pos begin = it.currentPos();
-        String temptoken = "";
-        temptoken += it.nextChar();
+        Pos start = it.currentPos();
+        String tempToken = "";
+        tempToken += it.nextChar();
         while(Character.isDigit(it.peekChar())) {
-            temptoken += it.nextChar();
+            tempToken += it.nextChar();
         }
         Pos end = it.currentPos();
-        return new Token(TokenType.Uint, Integer.parseInt(temptoken), begin, end);
+        return new Token(TokenType.Uint, Integer.parseInt(tempToken), start, end);
     }
 
     private Token lexIdentOrKeyword() throws TokenizeError {
@@ -68,26 +68,26 @@ public class Tokenizer {
         // -- 否则，返回标识符
         //
         // Token 的 Value 应填写标识符或关键字的字符串
-        Pos begin = it.currentPos();
-        String temptoken = "";
-        temptoken += it.nextChar();
+        Pos start = it.currentPos();
+        String tempToken = "";
+        tempToken += it.nextChar();
         while(Character.isAlphabetic(it.peekChar())) {
-            temptoken += it.nextChar();
+            tempToken += it.nextChar();
         }
         Pos end = it.currentPos();
 
-        if(temptoken.equals("begin"))
-            return new Token(TokenType.Begin, "begin", begin, end);
-        else if(temptoken.equals("end"))
-            return new Token(TokenType.End, "end", begin, end);
-        else if(temptoken.equals("var"))
-            return new Token(TokenType.Var, "var", begin, end);
-        else if(temptoken.equals("const"))
-            return new Token(TokenType.Const, "const", begin, end);
-        else if(temptoken.equals("print"))
-            return new Token(TokenType.Print, "print", begin, end);
+        if(tempToken.equals("begin"))
+            return new Token(TokenType.Begin, tempToken, start, end);
+        else if(tempToken.equals("end"))
+            return new Token(TokenType.End, tempToken, start, end);
+        else if(tempToken.equals("var"))
+            return new Token(TokenType.Var, tempToken, start, end);
+        else if(tempToken.equals("const"))
+            return new Token(TokenType.Const, tempToken, start, end);
+        else if(tempToken.equals("print"))
+            return new Token(TokenType.Print, tempToken, start, end);
         else
-            return new Token(TokenType.Ident, temptoken, begin, end);
+            return new Token(TokenType.Ident, tempToken, start, end);
     }
 
     private Token lexOperatorOrUnknown() throws TokenizeError {

@@ -284,8 +284,7 @@ public final class Analyser {
             if (peeked.getTokenType() == TokenType.Ident) {
                 // 调用相应的分析函数
                 analyseAssignmentStatement();
-                // 如果遇到其他非终结符的 FIRST 集呢？
-            }
+            }   // 如果遇到其他非终结符的 FIRST 集呢？
             else if(peeked.getTokenType() == TokenType.Print){
                 analyseOutputStatement();
             }
@@ -364,7 +363,7 @@ public final class Analyser {
         }
 
         expect(TokenType.Equal);
-        analyseExpression();
+        analyseExpression(); //分析表达式
         expect(TokenType.Semicolon);
 
         // 设置符号已初始化
@@ -452,7 +451,6 @@ public final class Analyser {
             instructions.add(new Instruction(Operation.LIT, value));
         } else if (check(TokenType.LParen)) {
             // 是表达式
-            next();
             // 调用相应的处理函数
             expect(TokenType.LParen);
             analyseExpression();
