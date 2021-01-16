@@ -226,15 +226,8 @@ public class Tokenizer {
         }
     }
 
-    private Token skipComment() throws TokenizeError {
+    private void skipComment() {
         it.nextChar();
-        if(it.peekChar()=='/'){
-            while (it.peekChar() != '\n') {
-                it.nextChar();
-            }
-            return null;
-        } else {
-            throw new TokenizeError(ErrorCode.InvalidInput, it.nextPos());
-        }
+        while (it.peekChar() != '\n') it.nextChar();
     }
 }
