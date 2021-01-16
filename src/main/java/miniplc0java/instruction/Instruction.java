@@ -86,7 +86,7 @@ public class Instruction {
                 break;
             case EQ:
                 instructions.add(new Instruction(Operation.cmp_i));
-                instructions.add(new Instruction(Operation.nop));
+                instructions.add(new Instruction(Operation.not));
                 break;
             case NEQ:
                 instructions.add(new Instruction(Operation.cmp_i));
