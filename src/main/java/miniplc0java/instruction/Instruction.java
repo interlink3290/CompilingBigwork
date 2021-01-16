@@ -65,9 +65,7 @@ public class Instruction {
 
     @Override
     public String toString() {
-        switch (this.opt) {
-        }
-        return null;
+        return ""+opt +'(' + x +')'+ '\n';
     }
 
     // 将运算符转为对应的运算操作，并加入instructions中

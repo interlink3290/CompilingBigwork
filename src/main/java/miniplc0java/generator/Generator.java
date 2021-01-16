@@ -37,7 +37,7 @@ public class Generator {
                 result.addAll(numToByte(global.getSize(), 4));
                 result.addAll(stringToBytes(global.getValue()));
             } else {
-                result.addAll(numToByte(8, 8));
+                result.addAll(numToByte(8, 4));
                 result.addAll(longToByte(0));
             }
         }
@@ -64,6 +64,9 @@ public class Generator {
                 result.addAll(numToByte(instruction.getOpt().getValue(), 1));
                 if(instruction.getBytes() == 4){
                     result.addAll(numToByte((int)instruction.getX(), 4));
+                }
+                else if(instruction.getBytes() == 8){
+                    result.addAll(longToByte((long)instruction.getX()));
                 }
             }
         }

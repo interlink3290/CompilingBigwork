@@ -2,10 +2,12 @@ package miniplc0java;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
 import miniplc0java.analyser.Analyser;
+import miniplc0java.analyser.SymbolTable;
 import miniplc0java.error.CompileError;
 import miniplc0java.generator.Generator;
 import miniplc0java.analyser.FunctionTable;
@@ -53,6 +55,17 @@ public class App {
             Generator generator = new Generator(analyser.getGlobalTable(), new ArrayList<Map.Entry<String, FunctionTable>>(analyser.getFunctionTable().entrySet()));
             byte[] result = generator.getResult();
             output.write(result);
+
+            for (SymbolTable globalDef : analyser.getGlobalTable()) {
+                System.out.println(globalDef);
+            }
+            List<Map.Entry<String, FunctionTable>> FunctionList = new ArrayList<Map.Entry<String, FunctionTable>>(analyser.getFunctionTable().entrySet());
+            for (Map.Entry<String, FunctionTable> functionDef : FunctionList) {
+                System.out.println(functionDef.getValue().getFunName());
+                System.out.println(functionDef);
+            }
+
+
             System.exit(0);
         } catch (Exception e) {
             System.out.println(e);

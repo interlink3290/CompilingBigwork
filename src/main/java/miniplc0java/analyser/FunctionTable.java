@@ -124,4 +124,15 @@ public class FunctionTable {
     public void setInstructions(List<Instruction> instructions) {
         this.instructions = instructions;
     }
+
+    public String toString() {
+        return "FunctionDef{\n" +
+                "   id=" + offset +
+                ",\n    returnSlots=" + ret_slots +
+                ",\n    paramSlots=" + param_slots +
+                ",\n    localSlots=" + loc_slots +
+                "    body=" + instructions +'\n'+
+                '}';
+    }
+
 }
