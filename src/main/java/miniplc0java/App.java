@@ -10,12 +10,15 @@ import miniplc0java.error.CompileError;
 import miniplc0java.generator.Generator;
 import miniplc0java.analyser.FunctionTable;
 import miniplc0java.tokenizer.StringIter;
+import miniplc0java.tokenizer.Token;
+import miniplc0java.tokenizer.TokenType;
 import miniplc0java.tokenizer.Tokenizer;
 
 
 public class App {
     public static void main(String[] args) throws CompileError {
         System.out.println(args[0]);
+
         try{
             InputStream input = new FileInputStream(args[0]);
             Scanner sc = new Scanner(input);

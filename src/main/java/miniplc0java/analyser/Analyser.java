@@ -140,6 +140,7 @@ public final class Analyser {
         if (token.getTokenType() == tt) {
             return next();
         } else {
+            TokenType xx = token.getTokenType();
             throw new ExpectedTokenError(tt, token);
         }
     }
@@ -400,7 +401,7 @@ public final class Analyser {
         SymbolTable symbol = canUse(symbolTable,level,tmp.getValueString());
         // 函数列表里找
         SymbolTable param = isParameter(params, tmp.getValueString());
-        if(symbol == null || param == null){
+        if(symbol == null && param == null){
             throw new AnalyzeError(ErrorCode.NotDeclared, tmp.getStartPos());
         }
         else {
@@ -683,6 +684,7 @@ public final class Analyser {
 
     private void analyseIfStmt(String type) throws CompileError {
         expect(TokenType.IF_KW);
+        analyseExpression();
         while(!opaStack.empty()){
             Instruction.addInstruction(opaStack.pop(), instructions);
         }
