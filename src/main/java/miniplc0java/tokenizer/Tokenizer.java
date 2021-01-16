@@ -36,11 +36,11 @@ public class Tokenizer {
             return lexIdentOrKeyword();
         } else if (peek == '\"') {
             return lexString();
-        } else {
-            Token t = lexOperatorOrUnknown();
-            if (t != null)
-                return t;
-            return nextToken();
+        } else if (peek == '/'){
+            return skipComment();
+        }
+        else {
+            return lexOperatorOrUnknown();
         }
     }
 
@@ -94,11 +94,11 @@ public class Tokenizer {
         else if(tempToken.equals("continue"))
             return new Token(TokenType.CONTINUE_KW, tempToken, start, end);
         else if(tempToken.equals("int"))
-            return new Token(TokenType.INT, tempToken, start, end);
+            return new Token(TokenType.IDENT, tempToken, start, end);
         else if(tempToken.equals("void"))
-            return new Token(TokenType.VOID, tempToken, start, end);
+            return new Token(TokenType.IDENT, tempToken, start, end);
         else if(tempToken.equals("double"))
-            return new Token(TokenType.DOUBLE, tempToken, start, end);
+            return new Token(TokenType.IDENT, tempToken, start, end);
         else
             return new Token(TokenType.IDENT, tempToken, start, end);
     }
@@ -221,10 +221,15 @@ public class Tokenizer {
         }
     }
 
-    private void skipComment() {
+    private Token skipComment() throws TokenizeError {
         it.nextChar();
-        while (it.peekChar() != '\n') {
-
+        if(it.peekChar()=='/'){
+            while (it.peekChar() != '\n') {
+                it.nextChar();
+            }
+            return null;
+        } else {
+            throw new TokenizeError(ErrorCode.InvalidInput, it.nextPos());
         }
     }
 }

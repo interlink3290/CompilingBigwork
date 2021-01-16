@@ -8,6 +8,10 @@ public class AnalyzeError extends CompileError {
     ErrorCode code;
     Pos pos;
 
+    public AnalyzeError(ErrorCode wrongParam) {
+        super();
+    }
+
     @Override
     public ErrorCode getErr() {
         return code;

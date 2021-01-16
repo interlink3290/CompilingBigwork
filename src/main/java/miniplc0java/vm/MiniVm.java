@@ -49,6 +49,7 @@ public class MiniVm {
 
     private void RunStep(Instruction inst) {
         switch (inst.getOpt()) {
+            /*
             case ADD: {
                 var a = pop();
                 var b = pop();
@@ -97,7 +98,7 @@ public class MiniVm {
                 break;
             default:
                 break;
-
+        */
         }
     }
 }

@@ -1,80 +1,27 @@
 package miniplc0java;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.PrintStream;
+import java.io.*;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 import miniplc0java.analyser.Analyser;
 import miniplc0java.error.CompileError;
-import miniplc0java.instruction.Instruction;
+import miniplc0java.generator.Generator;
+import miniplc0java.analyser.FunctionTable;
 import miniplc0java.tokenizer.StringIter;
-import miniplc0java.tokenizer.Token;
-import miniplc0java.tokenizer.TokenType;
 import miniplc0java.tokenizer.Tokenizer;
 
-import net.sourceforge.argparse4j.*;
-import net.sourceforge.argparse4j.impl.Arguments;
-import net.sourceforge.argparse4j.inf.ArgumentAction;
-import net.sourceforge.argparse4j.inf.ArgumentParser;
-import net.sourceforge.argparse4j.inf.ArgumentParserException;
-import net.sourceforge.argparse4j.inf.Namespace;
 
 public class App {
     public static void main(String[] args) throws CompileError {
-        var argparse = buildArgparse();
-        Namespace result;
-        try {
-            result = argparse.parseArgs(args);
-        } catch (ArgumentParserException e1) {
-            argparse.handleError(e1);
-            return;
-        }
-
-        var inputFileName = result.getString("input");
-        var outputFileName = result.getString("output");
-
-        InputStream input;
-        if (inputFileName.equals("-")) {
-            input = System.in;
-        } else {
-            try {
-                input = new FileInputStream(inputFileName);
-            } catch (FileNotFoundException e) {
-                System.err.println("Cannot find input file.");
-                e.printStackTrace();
-                System.exit(2);
-                return;
-            }
-        }
-
-        PrintStream output;
-        if (outputFileName.equals("-")) {
-            output = System.out;
-        } else {
-            try {
-                output = new PrintStream(new FileOutputStream(outputFileName));
-            } catch (FileNotFoundException e) {
-                System.err.println("Cannot open output file.");
-                e.printStackTrace();
-                System.exit(2);
-                return;
-            }
-        }
-
-        Scanner scanner;
-        scanner = new Scanner(input);
-        var iter = new StringIter(scanner);
-        var tokenizer = tokenize(iter);
-
-        if (result.getBoolean("tokenize")) {
-            // tokenize
-            var tokens = new ArrayList<Token>();
+        System.out.println(args[0]);
+        try{
+            InputStream input = new FileInputStream(args[0]);
+            Scanner sc = new Scanner(input);
+            var iter = new StringIter(sc);
+            var tokenizer = new Tokenizer(iter);
+            /*var tokens = new ArrayList<Token>();
             try {
                 while (true) {
                     var token = tokenizer.nextToken();
@@ -90,42 +37,24 @@ public class App {
                 return;
             }
             for (Token token : tokens) {
-                output.println(token.toString());
-            }
-        } else if (result.getBoolean("analyse")) {
-            // analyze
-            var analyzer = new Analyser(tokenizer);
-            List<Instruction> instructions;
-            try {
-                instructions = analyzer.analyse();
-            } catch (Exception e) {
-                // 遇到错误不输出，直接退出
-                System.err.println(e);
-                System.exit(0);
-                return;
-            }
-            for (Instruction instruction : instructions) {
-                output.println(instruction.toString());
-            }
-        } else {
-            System.err.println("Please specify either '--analyse' or '--tokenize'.");
-            System.exit(3);
+                System.out.println(token.toString());
+            }*/
+
+            Analyser analyser = new Analyser(tokenizer);
+            analyser.analyse();
+
+            FileOutputStream output = new FileOutputStream(new File(args[1]));
+            DataOutputStream out = new DataOutputStream(output);
+
+            Generator generator = new Generator(analyser.getGlobalTable(), new ArrayList<Map.Entry<String, FunctionTable>>(analyser.getFunctionTable().entrySet()));
+            byte[] result = generator.getResult();
+            output.write(result);
+
+        } catch (Exception e) {
+            System.exit(-1);
         }
+
+
     }
 
-    private static ArgumentParser buildArgparse() {
-        var builder = ArgumentParsers.newFor("miniplc0-java");
-        var parser = builder.build();
-        parser.addArgument("-t", "--tokenize").help("Tokenize the input").action(Arguments.storeTrue());
-        parser.addArgument("-l", "--analyse").help("Analyze the input").action(Arguments.storeTrue());
-        parser.addArgument("-o", "--output").help("Set the output file").required(true).dest("output")
-                .action(Arguments.store());
-        parser.addArgument("file").required(true).dest("input").action(Arguments.store()).help("Input file");
-        return parser;
-    }
-
-    private static Tokenizer tokenize(StringIter iter) {
-        var tokenizer = new Tokenizer(iter);
-        return tokenizer;
-    }
 }
