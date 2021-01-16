@@ -765,8 +765,10 @@ public final class Analyser {
 
         if (check( TokenType.ELSE_KW)) {
             expect(TokenType.ELSE_KW);
-            if (check(TokenType.IF_KW))
+            if (check(TokenType.IF_KW)){
                 analyseIfStmt(isWhile, startOfWhile, type);
+                instructions.add(new Instruction(Operation.br,0,4));
+            }
             else {
                 analyseBlockStmt(isWhile, startOfWhile, type);
                 instructions.add(new Instruction(Operation.br,0,4));
