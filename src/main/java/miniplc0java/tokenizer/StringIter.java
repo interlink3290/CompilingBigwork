@@ -138,4 +138,7 @@ public class StringIter {
         ptr = previousPos();
     }
 
+    public ArrayList<String> getLinesBuffer() {
+        return linesBuffer;
+    }
 }

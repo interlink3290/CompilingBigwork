@@ -25,6 +25,8 @@ public class App {
             InputStream input = new FileInputStream(args[0]);
             Scanner sc = new Scanner(input);
             var iter = new StringIter(sc);
+            iter.readAll();
+            System.out.println(iter.getLinesBuffer());
             var tokenizer = new Tokenizer(iter);
 
             /*var tokens = new ArrayList<Token>();
@@ -56,14 +58,14 @@ public class App {
             byte[] result = generator.getResult();
             output.write(result);
 
-            for (SymbolTable globalDef : analyser.getGlobalTable()) {
+            /*for (SymbolTable globalDef : analyser.getGlobalTable()) {
                 System.out.println(globalDef);
             }
             List<Map.Entry<String, FunctionTable>> FunctionList = new ArrayList<Map.Entry<String, FunctionTable>>(analyser.getFunctionTable().entrySet());
             for (Map.Entry<String, FunctionTable> functionDef : FunctionList) {
                 System.out.println(functionDef.getValue().getFunName());
                 System.out.println(functionDef);
-            }
+            }*/
 
 
             System.exit(0);
