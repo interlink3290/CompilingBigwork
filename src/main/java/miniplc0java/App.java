@@ -49,7 +49,7 @@ public class App {
             Generator generator = new Generator(analyser.getGlobalTable(), new ArrayList<Map.Entry<String, FunctionTable>>(analyser.getFunctionTable().entrySet()));
             byte[] result = generator.getResult();
             output.write(result);
-
+            System.exit(0);
         } catch (Exception e) {
             System.exit(-1);
         }
