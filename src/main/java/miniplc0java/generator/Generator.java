@@ -99,7 +99,7 @@ public class Generator {
 
     private List<Byte> longToByte(long x) {
         ArrayList<Byte> bytes = new ArrayList<>();
-        for(int i=0; i<4; i++) {
+        for(int i=0; i<8; i++) {
             long tmp = x >> (56 - i * 8);
             bytes.add((byte) (tmp & 0xFF));
         }

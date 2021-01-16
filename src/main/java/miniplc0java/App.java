@@ -58,14 +58,14 @@ public class App {
             byte[] result = generator.getResult();
             output.write(result);
 
-            /*for (SymbolTable globalDef : analyser.getGlobalTable()) {
+            for (SymbolTable globalDef : analyser.getGlobalTable()) {
                 System.out.println(globalDef);
             }
             List<Map.Entry<String, FunctionTable>> FunctionList = new ArrayList<Map.Entry<String, FunctionTable>>(analyser.getFunctionTable().entrySet());
             for (Map.Entry<String, FunctionTable> functionDef : FunctionList) {
                 System.out.println(functionDef.getValue().getFunName());
                 System.out.println(functionDef);
-            }*/
+            }
 
 
             System.exit(0);
