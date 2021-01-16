@@ -36,11 +36,10 @@ public class Tokenizer {
             return lexIdentOrKeyword();
         } else if (peek == '\"') {
             return lexString();
-        } else if (peek == '/'){
-            return skipComment();
-        }
-        else {
-            return lexOperatorOrUnknown();
+        } else {
+            Token token = lexOperatorOrUnknown();
+            if (token == null) return nextToken();
+            return token;
         }
     }
 
@@ -60,7 +59,7 @@ public class Tokenizer {
         }
         */
         Pos end = it.currentPos();
-        return new Token(TokenType.UINT_LITERAL, Integer.parseInt(tempToken), start, end);
+        return new Token(TokenType.UINT_LITERAL, Long.parseLong(tempToken), start, end);
     }
 
 
@@ -106,30 +105,36 @@ public class Tokenizer {
     // 字符串
     private Token lexString() throws TokenizeError {
         Pos start = it.currentPos();
-        String tempToken = "";
-        tempToken += it.nextChar();
-        while(it.peekChar() != '"') {
-            // 只有单边双引号
+
+        it.nextChar();
+
+        char nextch;
+        String tmpstr = new String();
+
+        while ((nextch = it.peekChar()) != '"') {
             if (it.isEOF()) {
                 throw new TokenizeError(ErrorCode.InvalidInput, it.previousPos());
             }
-            // 处理转义字符
-            if (it.peekChar() == '\\') {
+            if (nextch == '\\') {
                 it.nextChar();
-                if(it.peekChar() == 'n') tempToken += '\n';
-                else if(it.peekChar() == 't') tempToken += '\t';
-                else if(it.peekChar() == 'r') tempToken += '\r';
-                else if(it.peekChar() == '\'') tempToken += '\'';
-                else if(it.peekChar() == '\"') tempToken += '\"';
-                else if(it.peekChar() == '\\') tempToken += '\\';
-                else
-                    throw new TokenizeError(ErrorCode.InvalidInput, it.previousPos());
+                if ((nextch = it.peekChar()) == '\\') {
+                    tmpstr += '\\';
+                }
+                else if (nextch == '\'') tmpstr += '\'';
+                else if (nextch == '\"') tmpstr += '\"';
+                else if (nextch == 'n') tmpstr += '\n';
+                else if (nextch == 't') tmpstr += '\t';
+                else if (nextch == 'r') tmpstr += '\r';
+                else throw new TokenizeError(ErrorCode.InvalidInput, it.previousPos());
             } else {
-                tempToken += it.nextChar();
+                tmpstr += nextch;
             }
+            it.nextChar();
         }
+        it.nextChar();
+
         Pos end = it.currentPos();
-        return new Token(TokenType.STRING_LITERAL, tempToken, start, end);
+        return new Token(TokenType.STRING_LITERAL, tmpstr, start, end);
     }
 
     private Token lexOperatorOrUnknown() throws TokenizeError {

@@ -17,6 +17,8 @@ public enum Operation {
     not(0x2e),
     cmp_i(0x30),
     neg_i(0x34),
+    itof(0x36),
+    ftoi(0x37),
     set_lt(0x39),
     set_gt(0x3a),
     br(0x41),

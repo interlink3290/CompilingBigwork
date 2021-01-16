@@ -24,6 +24,7 @@ public class App {
             Scanner sc = new Scanner(input);
             var iter = new StringIter(sc);
             var tokenizer = new Tokenizer(iter);
+
             /*var tokens = new ArrayList<Token>();
             try {
                 while (true) {
@@ -54,6 +55,7 @@ public class App {
             output.write(result);
             System.exit(0);
         } catch (Exception e) {
+            System.out.println(e);
             System.exit(-1);
         }
 

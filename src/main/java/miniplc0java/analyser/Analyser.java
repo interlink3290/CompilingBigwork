@@ -206,9 +206,9 @@ public final class Analyser {
         FunctionTable function = new FunctionTable(tmp.getValueString(), type, params.size(), params, 0, functionId, return_slots, params.size(), loc_slots, instructions);
         functionTable.put(function.getFunName(), function);
 
-        analyseBlockStmt(type);
+        analyseBlockStmt(false, 0 ,type);
 
-        if((!returnType.equals(type)) || (isVoid && isReturn) || ((!isVoid)&&(!isReturn)) ){
+        if((!returnType.equals(type)) || isVoid&&isReturn || ((!isVoid)&&(!isReturn)) ){
             throw new AnalyzeError(ErrorCode.InvalidReturn, tmp.getEndPos());
         }
         if (type.equals("void")) {
@@ -288,34 +288,65 @@ public final class Analyser {
      */
     private void analysePriority(String type) throws CompileError {
         // 是运算符，就继续分析
-        while(check(TokenType.PLUS) || check(TokenType.MINUS) ||
-                check(TokenType.MUL) || check(TokenType.DIV) ||
-                check(TokenType.ASSIGN) ||
-                check(TokenType.EQ) || check(TokenType.NEQ) ||
-                check(TokenType.LT) || check(TokenType.GT)
-                ||check(TokenType.LE) || check(TokenType.GE)){
+        while(check(TokenType.PLUS) || check(TokenType.MINUS)
+                || check(TokenType.MUL) || check(TokenType.DIV)
+                || check(TokenType.ASSIGN) || check(TokenType.EQ)
+                || check(TokenType.NEQ)
+                || check(TokenType.LT) || check(TokenType.GT)
+                ||check(TokenType.LE) || check(TokenType.GE)
+                || check(TokenType.AS_KW)){
 
-            Token token = next();
+            if(check(TokenType.PLUS) || check(TokenType.MINUS)
+                    || check(TokenType.MUL) || check(TokenType.DIV)
+                    || check(TokenType.ASSIGN) || check(TokenType.EQ)
+                    || check(TokenType.NEQ)
+                    || check(TokenType.LT) || check(TokenType.GT)
+                    ||check(TokenType.LE) || check(TokenType.GE) ){
+                Token tmp = next();
 
-            // 栈不为空，比较优先级,>0就弹栈
-            if(!opaStack.empty()){
-                if(priority[ getIndexByType(opaStack.peek()) ][ getIndexByType(token.getTokenType()) ]>0){
-                    Instruction.addInstruction( opaStack.pop(), instructions);
+                if (!opaStack.empty()) {
+                    int front = getIndexByType(opaStack.peek());
+                    int next = getIndexByType(tmp.getTokenType());
+                    if (priority[front][next] > 0) {
+                            Instruction.addInstruction(opaStack.pop(), instructions);
+                    }
+                }
+                opaStack.push(tmp.getTokenType());
+                String type2 = analyseExpression();
+                if (!type.equals(type2)){
+                    throw new AnalyzeError(ErrorCode.InvalidExpression, tmp.getStartPos());
                 }
             }
-            opaStack.push(token.getTokenType());
-            //左右两边需要类型相同
-            String tmpType = analyseExpression();
-            if(!type.equals(tmpType)){
-                // 不同 报错
-                throw new AnalyzeError(ErrorCode.InvalidExpression, token.getStartPos());
-            }
-            /*
             else {
+                Token tmp=peek();
+
+                if(!type.equals("int")&&!type.equals("double")){
+                    throw new AnalyzeError(ErrorCode.InvalidExpression, tmp.getStartPos());
+                }
                 expect(TokenType.AS_KW);
-                analyseTy();
+                String Type2 = analyseTy();
+
+                if(!type.equals(Type2)){
+
+                    if(type.equals("int")){
+                        if(level == 0){
+                           globalInstructions.add(new Instruction(Operation.itof));
+                        }else{
+                            instructions.add(new Instruction(Operation.itof));
+                        }
+                        type = "double";
+                    }
+
+                    else{
+                        if(level == 0){
+                            globalInstructions.add(new Instruction(Operation.ftoi));
+                        }else{
+                            instructions.add(new Instruction(Operation.ftoi));
+                        }
+                        type = "int";
+                    }
+                }
             }
-            */
         }
     }
 
@@ -327,9 +358,14 @@ public final class Analyser {
     private String analyseNegateExpr() throws CompileError {
         expect(TokenType.MINUS);
         String type = "";
+        Token tmp = peek();
         type = analyseExpression();
-        if(type.equals("int")) {
-            instructions.add(new Instruction(Operation.neg_i));
+        if(type.equalsIgnoreCase("int")) {
+            if(level==0){
+                globalInstructions.add(new Instruction(Operation.neg_i));
+            } else {
+                instructions.add(new Instruction(Operation.neg_i));
+            }
         } else {
             throw new AnalyzeError(ErrorCode.IncompleteExpression, peek().getStartPos());
         }
@@ -366,26 +402,25 @@ public final class Analyser {
             Instruction instruction;
 
             long id;
-            if (symbol!=null) {
-                // 全局
-                if(symbol.getLevel()==0){
-                    id = symbol.getOffset();
-                    instruction = new Instruction(Operation.globa, id,4);
-                    instructions.add(instruction);
-                } // 局部
-                else {
-                    id = symbol.getOffset();
-                    instruction = new Instruction(Operation.loca, id,4);
-                    instructions.add(instruction);
-                }
-                type = symbol.getType();
-            }
-
-            else {
+            if (param!=null){
                 id = getParamOffset(param.getName(), params);
                 instruction = new Instruction(Operation.arga, paramOffset + id,4);
                 instructions.add(instruction);
                 type = param.getType();
+            }
+            else {
+                if(symbol.getLevel()>0){
+                    id = symbol.getOffset();
+                    instruction = new Instruction(Operation.loca, id,4);
+                    instructions.add(instruction);
+                }
+                /* 局部 */
+                else {
+                    id = symbol.getOffset();
+                    instruction = new Instruction(Operation.globa, id,4);
+                    instructions.add(instruction);
+                }
+                type = symbol.getType();
             }
             instructions.add(new Instruction(Operation.load64));
         }
@@ -405,7 +440,7 @@ public final class Analyser {
             throw new AnalyzeError(ErrorCode.NotDeclared, tmp.getStartPos());
         }
         else {
-            if(symbol!=null){
+            if(symbol!=null&&symbol.getLevel()>0){
                 type = symbol.getType();
                 if(type.equals("void")) {
                     throw new AnalyzeError(ErrorCode.InvalidAssignment, tmp.getStartPos());
@@ -414,21 +449,28 @@ public final class Analyser {
                     throw new AnalyzeError(ErrorCode.AssignToConstant, tmp.getStartPos());
                 }
                 else {
-                    if(symbol.getLevel()==0) {
-                        instructions.add(new Instruction(Operation.globa, symbol.getOffset(), 4));
-                    }
-                    else {
-                        instructions.add(new Instruction(Operation.loca, symbol.getOffset(), 4));
-                    }
+                    instructions.add(new Instruction(Operation.loca, symbol.getOffset(), 4));
                 }
             }
-            else {
+            else if(param!=null){
                 type = param.getType();
-                if(type.equals("void")) {
+                if (type.equals("void")) {
                     throw new AnalyzeError(ErrorCode.InvalidAssignment, tmp.getStartPos());
                 }
                 int offset = getParamOffset(param.getName(), params);
                 instructions.add(new Instruction(Operation.arga,paramOffset+offset, 4));
+            }
+            else if(symbol.getLevel() == 0){
+                type = symbol.getType();
+                if (type.equals("void")) {
+                    throw new AnalyzeError(ErrorCode.InvalidAssignment, tmp.getStartPos());
+                }
+                else if (symbol.isConstant() == 1) {
+                    throw new AnalyzeError(ErrorCode.AssignToConstant, tmp.getStartPos());
+                }
+                else {
+                    instructions.add(new Instruction(Operation.globa, symbol.getOffset(), 4));
+                }
             }
         }
         String type2 = "";
@@ -528,7 +570,6 @@ public final class Analyser {
             throw new AnalyzeError(ErrorCode.WrongParam);
         }
 
-
         return count;
     }
 
@@ -547,6 +588,7 @@ public final class Analyser {
         while(opaStack.peek()!=TokenType.L_PAREN){
             Instruction.addInstruction(opaStack.pop(),instructions);
         }
+        opaStack.pop();
         return type;
     }
 
@@ -555,24 +597,30 @@ public final class Analyser {
      * @return
      */
     private String analyseLiteralExpr() throws TokenizeError {
+        Token tmp = next();
         String type = "";
-        if(check(TokenType.UINT_LITERAL)){
-            Token token = next();
+        if(tmp.getTokenType()==TokenType.UINT_LITERAL||tmp.getTokenType()==TokenType.CHAR_LITERAL){
+            if(level==0){
+                globalInstructions.add(new Instruction(Operation.push , (Long) tmp.getValue(), 8));
+            }else {
+                instructions.add(new Instruction(Operation.push, (Long) tmp.getValue(), 8));
+            }
             type = "int";
-            instructions.add(new Instruction(Operation.push , (Integer) token.getValue(), 4));
-        } else if (check(TokenType.STRING_LITERAL)){
-            Token token = next();
-            type = "string";
-            // 添加到全局变量
-            globalTable.add(new SymbolTable(token.getValueString(), 1, token.getValueString()));
-            // 添加到符号表
-            instructions.add(new Instruction(Operation.push , globalOffset, 8));
+        } else if (tmp.getTokenType() == TokenType.STRING_LITERAL){
+            globalTable.add(new SymbolTable(tmp.getValueString(), 1, tmp.getValueString()));
+            if(level==0) {
+                globalInstructions.add(new Instruction(Operation.push, globalOffset, 8));
+            }else{
+                instructions.add(new Instruction(Operation.push, globalOffset, 8));
+            }
+
             globalOffset++;
+            type = "int";
         }
         return type;
     }
 
-    private void analyseStmt(String type) throws CompileError {
+    private void analyseStmt(Boolean isWhile, int startOfWhile ,String type) throws CompileError {
         Token tmp = peek();
         if(check(TokenType.MINUS)||check(TokenType.IDENT)||check(TokenType.L_PAREN)||check(TokenType.UINT_LITERAL)||check(TokenType.STRING_LITERAL)){
             analyseExpression();
@@ -583,17 +631,17 @@ public final class Analyser {
         } else if(check(TokenType.LET_KW)||check(TokenType.CONST_KW)){
             analyseDeclStmt();
         } else if(check(TokenType.IF_KW)){
-            analyseIfStmt(type);
+            analyseIfStmt(isWhile,startOfWhile,type);
         } else if(check(TokenType.WHILE_KW)){
             analyseWhileStmt(type);
         } else if(check(TokenType.BREAK_KW)){
-            analyseBreakStmt();
+            analyseBreakStmt(isWhile,startOfWhile,type);
         } else if(check(TokenType.CONTINUE_KW)){
-            analyseContinueStmt();
+            analyseContinueStmt(isWhile,startOfWhile,type);
         } else if(check(TokenType.RETURN_KW)){
             analyseReturnStmt(type);
         } else if(check(TokenType.L_BRACE)){
-            analyseBlockStmt(type);
+            analyseBlockStmt(isWhile,startOfWhile,type);
         } else if(check(TokenType.SEMICOLON)){
             expect(TokenType.SEMICOLON);
         } else{
@@ -613,6 +661,9 @@ public final class Analyser {
 
             expect(TokenType.COLON);
             String ty = analyseTy();
+            if(!ty.equals("int")&&!ty.equals("double")){
+                throw new AnalyzeError(ErrorCode.InvalidReturn, tmp.getStartPos());
+            }
             if(level==0){
                 symbolTable.add(new SymbolTable(0, 0, tmp.getValueString(), level, ty, globalOffset));
                 globalTable.add(new SymbolTable(tmp.getValueString(), 0));
@@ -636,7 +687,11 @@ public final class Analyser {
                 while(!opaStack.empty()){
                     Instruction.addInstruction(opaStack.pop(), instructions);
                 }
-                instructions.add(new Instruction(Operation.store64));
+                if(level==0) {
+                    globalInstructions.add(new Instruction(Operation.store64));
+                }else{
+                    instructions.add(new Instruction(Operation.store64));
+                }
             }
 
             expect(TokenType.SEMICOLON);
@@ -672,7 +727,11 @@ public final class Analyser {
                 Instruction.addInstruction(opaStack.pop(), instructions);
             }
 
-            instructions.add(new Instruction(Operation.store64));
+            if(level==0) {
+                globalInstructions.add(new Instruction(Operation.store64));
+            }else{
+                instructions.add(new Instruction(Operation.store64));
+            }
             expect(TokenType.SEMICOLON);
         }
         if(level == 0){
@@ -682,7 +741,7 @@ public final class Analyser {
         }
     }
 
-    private void analyseIfStmt(String type) throws CompileError {
+    private void analyseIfStmt(Boolean isWhile, int startOfWhile ,String type) throws CompileError {
         expect(TokenType.IF_KW);
         analyseExpression();
         while(!opaStack.empty()){
@@ -693,23 +752,23 @@ public final class Analyser {
 
         Instruction jump_ifInstruction = new Instruction(Operation.br, 0,4);
         instructions.add(jump_ifInstruction);
-        int size_begin = instructions.size();
+        int if_begin = instructions.size();
 
-        analyseBlockStmt(type);
+        analyseBlockStmt(isWhile, startOfWhile, type);
 
         Instruction jump_elseInstruction = new Instruction(Operation.br, 0,4);
         instructions.add(jump_elseInstruction);
         int else_start = instructions.size();
 
-        int jump = instructions.size() - size_begin;
+        int jump = instructions.size() - if_begin;
         jump_ifInstruction.setX(jump);
 
         if (check( TokenType.ELSE_KW)) {
             expect(TokenType.ELSE_KW);
             if (check(TokenType.IF_KW))
-                analyseIfStmt(type);
+                analyseIfStmt(isWhile, startOfWhile, type);
             else {
-                analyseBlockStmt(type);
+                analyseBlockStmt(isWhile, startOfWhile, type);
                 instructions.add(new Instruction(Operation.br,0,4));
             }
         }
@@ -734,8 +793,9 @@ public final class Analyser {
         instructions.add(br);
 
         int size_running = instructions.size();
+        boolean iswhile = true;
 
-        analyseBlockStmt(type);
+        analyseBlockStmt(iswhile, size_begin, type);
 
         Instruction goBack = new Instruction(Operation.br, 0,4);
         instructions.add(goBack);
@@ -747,15 +807,27 @@ public final class Analyser {
     }
 
 
-    private void analyseBreakStmt() throws CompileError {
+    private void analyseBreakStmt(Boolean isWhile, int startOfWhile ,String type) throws CompileError {
         expect(TokenType.BREAK_KW);
         expect(TokenType.SEMICOLON);
+        if(isWhile) {
+            int nowOffset = instructions.size();
+            instructions.add(new Instruction(Operation.br, -(nowOffset - startOfWhile), 4));
+        }else{
+            throw new AnalyzeError(ErrorCode.InvalidExpression);
+        }
     }
 
 
-    private void analyseContinueStmt() throws CompileError {
+    private void analyseContinueStmt(Boolean isWhile, int startOfWhile ,String type) throws CompileError {
         expect(TokenType.CONTINUE_KW);
         expect(TokenType.SEMICOLON);
+        if(isWhile){
+            int nowOffset = instructions.size();
+            instructions.add(new Instruction(Operation.br,-(nowOffset-startOfWhile-1),4));
+        }else{
+            throw new AnalyzeError(ErrorCode.InvalidExpression);
+        }
     }
 
     private void analyseReturnStmt(String type) throws CompileError {
@@ -773,7 +845,7 @@ public final class Analyser {
                 while (!opaStack.empty()) {
                     Instruction.addInstruction(opaStack.pop(), instructions);
                 }
-                instructions.add(new Instruction(Operation.store64,0,0));
+                instructions.add(new Instruction(Operation.store64));
                 isReturn = true ;
             } else {
                 throw new AnalyzeError(ErrorCode.InvalidReturn, tmp.getStartPos());
@@ -786,7 +858,7 @@ public final class Analyser {
         instructions.add(new Instruction(Operation.ret));
     }
 
-    private void  analyseBlockStmt(String type) throws CompileError {
+    private void  analyseBlockStmt(Boolean isWhile, int startOfWhile ,String type) throws CompileError {
         expect(TokenType.L_BRACE);
         level++;
         while(check(TokenType.MINUS)||check(TokenType.IDENT)||check(TokenType.L_PAREN)
@@ -796,7 +868,7 @@ public final class Analyser {
                 ||check(TokenType.BREAK_KW)||check(TokenType.CONTINUE_KW)
                 ||check(TokenType.RETURN_KW)||check(TokenType.L_BRACE)||
                 check(TokenType.SEMICOLON)){
-            analyseStmt(type);
+            analyseStmt(isWhile,startOfWhile,type);
         }
         expect(TokenType.R_BRACE);
         // 清除该层的变量

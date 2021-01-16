@@ -85,13 +85,13 @@ public enum TokenType {
             case CONTINUE_KW:
                 return "CONTINUE";
             case UINT_LITERAL:
-                return "UINT";
+                return "UINT_LITERAL";
             case STRING_LITERAL:
-                return "STRING";
+                return "STRING_LITERAL";
             case DOUBLE_LITERAL:
-                return "DOUBLE";
+                return "DOUBLE_LITERAL";
             case CHAR_LITERAL:
-                return "CHAR";
+                return "CHAR_LITERAL";
 
             case IDENT:
                 return "IDENT";
